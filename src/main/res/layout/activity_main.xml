@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/activity_main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.segway.robot.sdk.emoji.EmojiView
+        android:id="@+id/face"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <TextView
+            android:id="@+id/textView"
+            android:text="Hello Loomo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:layout_marginTop="200dp"
+            android:background="@color/backgroundColor"
+            android:textColor="@color/textColor"
+            android:alpha="0.6"
+            android:textSize="25sp"/>
+    </com.segway.robot.sdk.emoji.EmojiView>
+</RelativeLayout>
