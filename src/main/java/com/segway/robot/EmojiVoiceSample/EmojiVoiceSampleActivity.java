@@ -1,11 +1,7 @@
 package com.segway.robot.EmojiVoiceSample;
 
-/**
- * Created by Yi.Zhang on 2017/04/20.
- */
 
 import android.app.Activity;
-import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -35,9 +31,11 @@ import com.segway.robot.sdk.voice.recognition.WakeupResult;
 import com.segway.robot.sdk.voice.tts.TtsListener;
 
 
+/**
+ * @author jacob
+ */
 public class EmojiVoiceSampleActivity extends Activity implements View.OnClickListener {
-    private static final String TAG = "EmojiSampleActivity";
-    private Context context;
+    private static final String TAG = "Loomo";
 
     private static final int ACTION_SHOW_MSG = 1;
     private static final int ACTION_START_RECOGNITION = 2;
@@ -62,66 +60,61 @@ public class EmojiVoiceSampleActivity extends Activity implements View.OnClickLi
     private RecognitionListener mRecognitionListener;
     private TtsListener mTtsListener;
 
-    // region Handler
     private final Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
             switch (msg.what) {
                 case ACTION_SHOW_MSG:
-                    //Toast.makeText(context, msg.obj.toString(), Toast.LENGTH_SHORT).show();
                     mTextView.setText(msg.obj.toString());
                     break;
                 case ACTION_START_RECOGNITION:
                     try {
-                        mRecognizer.startRecognition(mWakeupListener, mRecognitionListener);
+                        mRecognizer.startWakeupAndRecognition(mWakeupListener, mRecognitionListener);
                     } catch (VoiceException e) {
-                        Log.e(TAG, "Exception: ", e);
+                        e.printStackTrace();
                     }
                     break;
                 case ACTION_STOP_RECOGNITION:
                     try {
                         mRecognizer.stopRecognition();
                     } catch (VoiceException e) {
-                        Log.e(TAG, "Exception: ", e);
+                        e.printStackTrace();
                     }
                     break;
                 case ACTION_BEHAVE:
                     try {
-                        mEmoji.startAnimation(RobotAnimatorFactory.getReadyRobotAnimator((Integer)msg.obj), new EmojiPlayListener() {
+                        mEmoji.startAnimation(RobotAnimatorFactory.getReadyRobotAnimator((Integer) msg.obj), new EmojiPlayListener() {
                             @Override
                             public void onAnimationStart(RobotAnimator animator) {
-                                Log.d(TAG, "onAnimationStart: " + animator);
                             }
 
                             @Override
                             public void onAnimationEnd(RobotAnimator animator) {
-                                Log.d(TAG, "onAnimationEnd: " + animator);
                                 mEmojiView.setClickable(true);
                                 mHandcontrolManager.setWorldPitch(0.6f);
                             }
 
                             @Override
                             public void onAnimationCancel(RobotAnimator animator) {
-                                Log.d(TAG, "onAnimationCancel: " + animator);
                                 mEmojiView.setClickable(true);
                                 mHandcontrolManager.setWorldPitch(0.6f);
                             }
                         });
                     } catch (EmojiException e) {
-                        Log.e(TAG, "onCreate: ", e);
+                        e.printStackTrace();
                     }
+                    break;
+                default:
                     break;
             }
         }
     };
-    // endregion
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        context = this;
 
         mEmojiView = (EmojiView) findViewById(R.id.face);
         mEmojiView.setOnClickListener(this);
@@ -129,13 +122,17 @@ public class EmojiVoiceSampleActivity extends Activity implements View.OnClickLi
 
         initEmoji();
         initListeners();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
         bindServices();
     }
 
     @Override
     public void onClick(final View v) {
         v.setClickable(false);
-
         int behavior;
         int randomSeed = (int) (Math.random() * 4);
         switch (randomSeed) {
@@ -155,13 +152,10 @@ public class EmojiVoiceSampleActivity extends Activity implements View.OnClickLi
                 behavior = BehaviorList.LOOK_AROUND;
                 break;
         }
-
-        // Behave random Emoji
         Message msg = mHandler.obtainMessage(ACTION_BEHAVE, behavior);
         mHandler.sendMessage(msg);
     }
 
-    // init listeners.
     private void initListeners() {
 
         mRecognitionBindStateListener = new ServiceBinder.BindStateListener() {
@@ -169,30 +163,30 @@ public class EmojiVoiceSampleActivity extends Activity implements View.OnClickLi
             public void onBind() {
                 Log.d(TAG, "Recognition onBind");
                 try {
-                    // make toast to indicate bind success.
-                    //Message msg = mHandler.obtainMessage(ACTION_SHOW_MSG, "Rrecognition service bind success");
-                    //mHandler.sendMessage(msg);
-
                     //get recognition language when service bind and init Constrained grammar.
                     mRecognitionLanguage = mRecognizer.getLanguage();
-                    if (mRecognitionLanguage == Languages.EN_US)
+                    if (mRecognitionLanguage == Languages.EN_US) {
                         initControlGrammar();
-                    mRecognizer.addGrammarConstraint(mMoveSlotGrammar);
-
-                    // if both ready, start recognition
-                    mRecognitionReady = true;
-                    if(mSpeakerReady && mRecognitionReady) {
-                        Message msg = mHandler.obtainMessage(ACTION_START_RECOGNITION);
+                        mRecognizer.addGrammarConstraint(mMoveSlotGrammar);
+                        // if both ready, start recognition
+                        mRecognitionReady = true;
+                        if (mSpeakerReady && mRecognitionReady) {
+                            Message msg = mHandler.obtainMessage(ACTION_START_RECOGNITION);
+                            mHandler.sendMessage(msg);
+                        }
+                    } else {
+                        mEmojiView.setClickable(false);
+                        Message msg = mHandler.obtainMessage(ACTION_SHOW_MSG, "Only US English is supported");
                         mHandler.sendMessage(msg);
                     }
+
                 } catch (VoiceException e) {
-                    Log.e(TAG, "Exception: ", e);
+                    e.printStackTrace();
                 }
             }
 
             @Override
             public void onUnbind(String s) {
-                Log.d(TAG, "Recognition onUnbind");
                 // make toast to indicate unbind success.
                 Message msg = mHandler.obtainMessage(ACTION_SHOW_MSG, "Recognition service disconnected");
                 mHandler.sendMessage(msg);
@@ -209,37 +203,33 @@ public class EmojiVoiceSampleActivity extends Activity implements View.OnClickLi
             public void onBind() {
                 Log.d(TAG, "Speaker onBind");
                 try {
-                    // make toast to indicate bind success.
-                    //Message msg = mHandler.obtainMessage(ACTION_SHOW_MSG, "Speaker service bind success");
-                    //mHandler.sendMessage(msg);
 
-                    //get speaker service language.
                     mSpeakerLanguage = mSpeaker.getLanguage();
-                    if (mSpeakerLanguage != mRecognitionLanguage) {
-                        Log.e(TAG, "Speakerlanguage dosen't match Recognitionlanguage!!!");
-                    }
+                    if (mSpeakerLanguage == Languages.EN_US) {
+                        try {
+                            mSpeaker.speak("Hello, my name is Loomo.", mTtsListener);
+                        } catch (VoiceException e) {
+                            e.printStackTrace();
+                        }
 
-                    // Speak welcome words
-                    try {
-                        mSpeaker.speak("Hello, my name is Loomo.", mTtsListener);
-                    } catch (VoiceException e) {
-                        Log.e(TAG, "Speaker speak failed", e);
-                    }
-
-                    // if both ready, start recognition
-                    mSpeakerReady = true;
-                    if(mSpeakerReady && mRecognitionReady) {
-                        Message msg = mHandler.obtainMessage(ACTION_START_RECOGNITION);
+                        // if both ready, start recognition
+                        mSpeakerReady = true;
+                        if (mSpeakerReady && mRecognitionReady) {
+                            Message msg = mHandler.obtainMessage(ACTION_START_RECOGNITION);
+                            mHandler.sendMessage(msg);
+                        }
+                    }else {
+                        mEmojiView.setClickable(false);
+                        Message msg = mHandler.obtainMessage(ACTION_SHOW_MSG, "Only US English is supported");
                         mHandler.sendMessage(msg);
                     }
                 } catch (VoiceException e) {
-                    Log.e(TAG, "Exception: ", e);
+                    e.printStackTrace();
                 }
             }
 
             @Override
             public void onUnbind(String s) {
-                Log.d(TAG, "Speaker onUnbind");
                 // make toast to indicate unbind success.
                 Message msg = mHandler.obtainMessage(ACTION_SHOW_MSG, "Speaker service unbind success");
                 mHandler.sendMessage(msg);
@@ -255,21 +245,17 @@ public class EmojiVoiceSampleActivity extends Activity implements View.OnClickLi
             @Override
             public void onStandby() {
                 Log.d(TAG, "onStandby");
-                Message msg = mHandler.obtainMessage(ACTION_SHOW_MSG, "Loomo awake, you can say \"OK Loomo\" \n or touch screen");
+                Message msg = mHandler.obtainMessage(ACTION_SHOW_MSG, "You can say \"Ok Loomo\" \n or touch the screen to wake up Loomo");
                 mHandler.sendMessage(msg);
             }
 
             @Override
             public void onWakeupResult(WakeupResult wakeupResult) {
-                //show the wakeup result and wakeup angle.
                 Log.d(TAG, "wakeup word:" + wakeupResult.getResult() + ", angle: " + wakeupResult.getAngle());
-                //Message msg = mHandler.obtainMessage(ACTION_SHOW_MSG, "wakeup result:" + wakeupResult.getResult() + ", angle:" + wakeupResult.getAngle());
-                //mHandler.sendMessage(msg);
             }
 
             @Override
             public void onWakeupError(String s) {
-                //show the wakeup error reason.
                 Log.d(TAG, "onWakeupError:" + s);
                 Message msg = mHandler.obtainMessage(ACTION_SHOW_MSG, "wakeup error:" + s);
                 mHandler.sendMessage(msg);
@@ -280,7 +266,7 @@ public class EmojiVoiceSampleActivity extends Activity implements View.OnClickLi
             @Override
             public void onRecognitionStart() {
                 Log.d(TAG, "onRecognitionStart");
-                Message statusMsg = mHandler.obtainMessage(ACTION_SHOW_MSG, "Loomo begin recognition, say:\n look up, look down, look left, look right," +
+                Message statusMsg = mHandler.obtainMessage(ACTION_SHOW_MSG, "Loomo begin to recognize, say:\n look up, look down, look left, look right," +
                         " turn left, turn right, turn around, turn full");
                 mHandler.sendMessage(statusMsg);
             }
@@ -289,20 +275,11 @@ public class EmojiVoiceSampleActivity extends Activity implements View.OnClickLi
             public boolean onRecognitionResult(RecognitionResult recognitionResult) {
                 //show the recognition result and recognition result confidence.
                 String result = recognitionResult.getRecognitionResult();
-                Log.d(TAG, "recognition result: " + result +", confidence:" + recognitionResult.getConfidence());
+                Log.e(TAG, "recognition result: " + result + ", confidence:" + recognitionResult.getConfidence());
                 Message resultMsg = mHandler.obtainMessage(ACTION_SHOW_MSG, "recognition result: " + result + ", confidence:" + recognitionResult.getConfidence());
                 mHandler.sendMessage(resultMsg);
 
-                // recognize instruction
-                if (result.contains("hello") || result.contains("hi")) {
-                    try {
-                        mRecognizer.removeGrammarConstraint(mMoveSlotGrammar);
-                    } catch (VoiceException e) {
-                        Log.e(TAG, "Exception: ", e);
-                    }
-                    //true means continuing to recognition, false means wakeup.
-                    return true;
-                } else if (result.contains("look") && result.contains("left")) {
+               if (result.contains("look") && result.contains("left")) {
                     Message msg = mHandler.obtainMessage(ACTION_BEHAVE, BehaviorList.LOOK_LEFT);
                     mHandler.sendMessage(msg);
                 } else if (result.contains("look") && result.contains("right")) {
@@ -332,34 +309,26 @@ public class EmojiVoiceSampleActivity extends Activity implements View.OnClickLi
 
             @Override
             public boolean onRecognitionError(String s) {
-                //show the recognition error reason.
                 Log.d(TAG, "onRecognitionError: " + s);
                 Message errorMsg = mHandler.obtainMessage(ACTION_SHOW_MSG, "recognition error: " + s);
                 mHandler.sendMessage(errorMsg);
-                return false; //to wakeup
+                return false;
             }
         };
 
         mTtsListener = new TtsListener() {
             @Override
             public void onSpeechStarted(String s) {
-                //s is speech content, callback this method when speech is starting.
                 Log.d(TAG, "onSpeechStarted() called with: s = [" + s + "]");
-                //Message msg = mHandler.obtainMessage(ACTION_SHOW_MSG, "speech start");
-                //mHandler.sendMessage(msg);
             }
 
             @Override
             public void onSpeechFinished(String s) {
-                //s is speech content, callback this method when speech is finish.
                 Log.d(TAG, "onSpeechFinished() called with: s = [" + s + "]");
-                //Message msg = mHandler.obtainMessage(ACTION_SHOW_MSG, "speech end");
-                //mHandler.sendMessage(msg);
             }
 
             @Override
             public void onSpeechError(String s, String s1) {
-                //s is speech content, callback this method when speech occurs error.
                 Log.d(TAG, "onSpeechError() called with: s = [" + s + "], s1 = [" + s1 + "]");
                 Message msg = mHandler.obtainMessage(ACTION_SHOW_MSG, "speech error: " + s1);
                 mHandler.sendMessage(msg);
@@ -367,55 +336,39 @@ public class EmojiVoiceSampleActivity extends Activity implements View.OnClickLi
         };
     }
 
-    // bind Recognition & Speaker Services.
-    private void bindServices () {
+    private void bindServices() {
         mRecognizer = Recognizer.getInstance();
         mSpeaker = Speaker.getInstance();
-
-        //bind the recognition service.
-        mRecognizer.bindService(context, mRecognitionBindStateListener);
-
-        //bind the speaker service.
-        mSpeaker.bindService(context, mSpeakerBindStateListener);
+        mRecognizer.bindService(this, mRecognitionBindStateListener);
+        mSpeaker.bindService(this, mSpeakerBindStateListener);
     }
 
-    // unbind Recognition & Speaker Services.
-    private void unBindServices () {
-        //unbind the recognition service and speaker service.
+    private void unBindServices() {
         mRecognizer.unbindService();
         mSpeaker.unbindService();
     }
 
-    // init control grammar.
     private void initControlGrammar() {
-        if (mRecognitionLanguage == Languages.EN_US) {
-            mMoveSlotGrammar = new GrammarConstraint();
-            mMoveSlotGrammar.setName("movement slots grammar");
+        mMoveSlotGrammar = new GrammarConstraint();
+        mMoveSlotGrammar.setName("movement orders");
 
-            Slot moveSlot = new Slot("movement");
-            moveSlot.setOptional(false);
-            moveSlot.addWord("look");
-            moveSlot.addWord("turn");
-            mMoveSlotGrammar.addSlot(moveSlot);
+        Slot moveSlot = new Slot("movement");
+        moveSlot.setOptional(false);
+        moveSlot.addWord("look");
+        moveSlot.addWord("turn");
+        mMoveSlotGrammar.addSlot(moveSlot);
 
-            Slot orientationSlot = new Slot("orientation");
-            orientationSlot.setOptional(false);
-            orientationSlot.addWord("right");
-            orientationSlot.addWord("left");
-            orientationSlot.addWord("up");
-            orientationSlot.addWord("down");
-            orientationSlot.addWord("full");
-            orientationSlot.addWord("around");
-            mMoveSlotGrammar.addSlot(orientationSlot);
-        } else {
-            // Recognition language dosen't support
-            Log.e(TAG, "Speakerlanguage dosen't support " + mRecognitionLanguage);
-            Message msg = mHandler.obtainMessage(ACTION_SHOW_MSG, "Speakerlanguage dosen't support " + mRecognitionLanguage);
-            mHandler.sendMessage(msg);
-        }
+        Slot orientationSlot = new Slot("orientation");
+        orientationSlot.setOptional(false);
+        orientationSlot.addWord("right");
+        orientationSlot.addWord("left");
+        orientationSlot.addWord("up");
+        orientationSlot.addWord("down");
+        orientationSlot.addWord("full");
+        orientationSlot.addWord("around");
+        mMoveSlotGrammar.addSlot(orientationSlot);
     }
 
-    // init EmojiView.
     private void initEmoji() {
         mEmoji = Emoji.getInstance();
         mEmoji.init(this);
@@ -426,8 +379,9 @@ public class EmojiVoiceSampleActivity extends Activity implements View.OnClickLi
     }
 
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
+    protected void onPause() {
+        super.onPause();
         unBindServices();
+        finish();
     }
 }
