@@ -49,7 +49,7 @@ dependencies {
     })
     testCompile 'junit:junit:4.12'
     compile 'com.segway.robot:emoji:0.1.18'
-    compile 'com.segway.robot:visionsdk:0.6.124'
-    compile 'com.segway.robot:speech-sdk:0.5.157'
-    compile 'com.segway.robot:headsdk:0.6.119'
+    compile 'com.segway.robot:visionsdk:0.6.170'
+    compile 'com.segway.robot:speech-sdk:0.5.171'
+    compile 'com.segway.robot:headsdk:0.6.202'
 }
