@@ -374,8 +374,8 @@ public class EmojiVoiceSampleActivity extends Activity implements View.OnClickLi
         mEmoji.init(this);
         mEmoji.setEmojiView((EmojiView) findViewById(R.id.face));
         mHandcontrolManager = new HeadControlManager(this);
-        mHandcontrolManager.setMode(HeadControlHandler.MODE_FREE);
         mEmoji.setHeadControlHandler(mHandcontrolManager);
+        mEmoji.setBaseControlHandler(new BaseControlManager(this));
     }
 
     @Override

@@ -11,7 +11,7 @@ import com.segway.robot.sdk.locomotion.head.Head;
  * Created by laoxinqiang on 2017/4/19.
  */
 
-public class HeadControlManager implements HeadControlHandler{
+public class HeadControlManager implements HeadControlHandler {
     private static final String TAG = "HeadControlManager";
     private Head mHead;
     private boolean mIsBindSuccess = false;
@@ -28,6 +28,7 @@ public class HeadControlManager implements HeadControlHandler{
             Log.d(TAG, "onBind() called");
             mIsBindSuccess = true;
             setWorldPitch(0.6f);
+            setMode(HeadControlHandler.MODE_EMOJI);
         }
 
         @Override
