@@ -1,6 +1,10 @@
 buildscript {
     repositories {
         jcenter()
+        maven {
+            url 'https://maven.google.com/'
+            name 'Google'
+        }
     }
 
     dependencies {
@@ -39,6 +43,10 @@ repositories {
     jcenter()
     flatDir {
         dirs file("libs")
+    }
+    maven {
+        url 'https://maven.google.com/'
+        name 'Google'
     }
 }
 
